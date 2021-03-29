@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:http/http.dart';
 
 String bestBuy =
@@ -13,16 +16,37 @@ String gameStop =
     'https://www.gamestop.com/video-games/xbox-series-x/consoles/products/xbox-series-s-digital-edition/B224746K.html';
 
 void main(List<String> arguments) async {
-  await check(bestBuy, '"Sold Out\\"}');
-  await check(walmart, 'This item is <b>out of stock</b>');
-  await check(amazon, 'Currently unavailable.');
-  await check(gameStop, '"availability":"Not Available"');
-
-  // Timer.periodic(Duration(minutes: 2), (_) async {});
+  Timer.periodic(Duration(seconds: 60), (_) async {
+    check(bestBuy, '"Sold Out\\"}');
+    check(walmart, 'This item is <b>out of stock</b>');
+    check(amazon, 'Currently unavailable.');
+    check(gameStop, '"availability":"Not Available"');
+  });
 }
 
-Future<void> check(String url, String text) {
-  return get(Uri.parse(url))
+void check(String url, String text) {
+  get(Uri.parse(url))
       .then((value) => value.body.contains(text))
-      .then((value) => print(value));
+      .asStream()
+      .where((event) => !event)
+      .listen(
+    (event) async {
+      print(url);
+      print('-' * 20);
+      await Process.run(
+        'terminal-notifier',
+        [
+          '-message',
+          url,
+          '-title',
+          'Xbox',
+          '-open',
+          url,
+          '-ignoreDnD',
+          '-sound',
+          'default'
+        ],
+      );
+    },
+  );
 }
